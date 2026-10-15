@@ -155,9 +155,6 @@ import com.example.util.AviDateUtils
 import com.example.voice.AviSpeechManager
 import kotlinx.coroutines.launch
 
-// =========================================================================
-// PANTALLA 5: HISTORIAL DE EVENTOS (Room Database + AVIX)
-// =========================================================================
 @OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalLayoutApi::class
@@ -1011,7 +1008,6 @@ fun IncidenteCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Placa grande
                 Text(
                     text = item.placa,
                     fontWeight = FontWeight.ExtraBold,
@@ -1020,7 +1016,6 @@ fun IncidenteCard(
                     letterSpacing = 1.sp
                 )
 
-                // Badge Acción: FUGA, DERIVADO o LIBERADO
                 val actionColor = when (item.accion.uppercase()) {
                     "FUGA" -> AviActionFuga
                     "LIBERADO" -> AviActionLiberado
@@ -1054,7 +1049,6 @@ fun IncidenteCard(
                     color = Color(0xFF334155)
                 )
 
-                // Estado de sincronización
                 Surface(
                     shape = RoundedCornerShape(6.dp),
                     color = when (item.estadoSincronizacion) {

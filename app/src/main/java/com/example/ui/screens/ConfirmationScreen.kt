@@ -155,9 +155,6 @@ import com.example.util.AviDateUtils
 import com.example.voice.AviSpeechManager
 import kotlinx.coroutines.launch
 
-// =========================================================================
-// PANTALLA 4: CONFIRMACIÓN Y REVISIÓN (Editable antes de guardar)
-// =========================================================================
 @Composable
 fun PantallaConfirmacion(
     repository: IncidentRepository,
@@ -236,7 +233,6 @@ fun PantallaConfirmacion(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Tarjeta con Texto Original
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -290,7 +286,6 @@ fun PantallaConfirmacion(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // CAMPOS EDITABLES
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -311,7 +306,6 @@ fun PantallaConfirmacion(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Selección de Acción: FUGA, DERIVADO o LIBERADO
                 Text("Acción Operativa", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(
@@ -362,7 +356,6 @@ fun PantallaConfirmacion(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Campo PLACA
                 OutlinedTextField(
                     value = placaInput,
                     onValueChange = {
@@ -413,7 +406,6 @@ fun PantallaConfirmacion(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // VÍA: catálogo real de AVIX filtrado por la plaza del usuario.
                 Text(
                     text = "Vía",
                     fontSize = 12.sp,
@@ -553,7 +545,6 @@ fun PantallaConfirmacion(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // BOTONES DE ACCIÓN
         Button(
             onClick = {
                 val viaNum = viaInput.toIntOrNull()

@@ -16,7 +16,7 @@ data class Incident(
     val id: String = UUID.randomUUID().toString(),
     val placa: String,
     val via: Int?,
-    val accion: String = "FUGA", // FUGA o DERIVADO
+    val accion: String = "FUGA",
     val plazaId: String = "PLAZA-01",
     val fechaHoraEvento: String = AviDateUtils.nowLimaIso(),
     val textoReconocido: String = "",
@@ -40,7 +40,6 @@ data class ParsedCommand(
     val advertencias: List<String> = emptyList()
 )
 
-// DTOs para la integración con AVIX Spring Boot API
 @JsonClass(generateAdapter = true)
 data class RegistroAvixRequest(
     @Json(name = "idempotenciaId") val id: String,

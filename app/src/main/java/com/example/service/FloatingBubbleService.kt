@@ -102,7 +102,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-// Acciones disponibles en el panel flotante y sus colores de selección.
 private val popupActions = listOf(
     "FUGA" to Color(0xFFDC2626),
     "DERIVADO" to Color(0xFFD97706),
@@ -118,13 +117,10 @@ class FloatingBubbleService : Service() {
     private lateinit var speechManager: AviSpeechManager
     private lateinit var repository: IncidentRepository
 
-    // Estado para controlar si está en modo burbuja pequeña o panel flotante expandido
     private val isExpanded = MutableStateFlow(false)
 
-    // Zona de cierre estilo Messenger: al arrastrar AVIX hacia abajo y soltar, se cierra.
     private val isInDismissZone = MutableStateFlow(false)
 
-    // Coordenadas flotantes
     private var initialX = 0
     private var initialY = 0
     private var initialTouchX = 0f
@@ -281,7 +277,6 @@ class FloatingBubbleService : Service() {
     private fun updateLayoutParamsForExpansion(expanded: Boolean) {
         windowLayoutParams?.let { params ->
             if (expanded) {
-                // Permitir que el panel tome foco para escribir en campos de texto si es necesario
                 params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                         WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
                 params.width = WindowManager.LayoutParams.WRAP_CONTENT
@@ -339,9 +334,6 @@ class FloatingBubbleService : Service() {
     }
 }
 
-/**
- * Contenido Compose renderizado dentro de la ventana de WindowManager
- */
 @Composable
 fun FloatingOverlayContent(
     isExpandedFlow: MutableStateFlow<Boolean>,
@@ -504,7 +496,6 @@ fun FloatingOverlayContent(
     }
 
     if (!expanded) {
-        // BURBUJA COLAPSADA
         Box(
             modifier = Modifier
                 .wrapContentSize()
@@ -580,7 +571,6 @@ fun FloatingOverlayContent(
             }
         }
     } else {
-        // PANEL EXPANDIDO FLOTANTE
         Card(
             modifier = Modifier
                 .width(340.dp)
@@ -601,7 +591,6 @@ fun FloatingOverlayContent(
                     .padding(14.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Cabecera arrastrable
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -656,7 +645,6 @@ fun FloatingOverlayContent(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Guía breve del orden de dictado
                 Text(
                     text = "ACCIÓN  →  VÍA  →  PLACA",
                     color = Color(0xFF0B5CAB),
@@ -666,7 +654,6 @@ fun FloatingOverlayContent(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Captura principal por voz
                 Button(
                     onClick = {
                         if (voiceState.isListening) {
@@ -717,7 +704,6 @@ fun FloatingOverlayContent(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Selector de acción: FUGA, DERIVADO y LIBERADO.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -748,7 +734,6 @@ fun FloatingOverlayContent(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Campos interpretados (Placa y Vía)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -931,7 +916,6 @@ fun FloatingOverlayContent(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Botón REGISTRAR
                 Button(
                     onClick = {
                         val viaNum = AviParser.normalizeViaNumber(

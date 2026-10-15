@@ -2,7 +2,6 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Paleta AVIX alineada al diseño visual de AVIX Web.
 val AviPrimaryDark = Color(0xFF0B2342)
 val AviNavy = Color(0xFF0B2342)
 val AviBlueMedium = Color(0xFF0B5CAB)
@@ -16,7 +15,6 @@ val AviBorder = Color(0xFFDFE5EE)
 val AviTextPrimary = Color(0xFF132033)
 val AviTextSecondary = Color(0xFF64748B)
 
-// Estados operativos
 val AviStatusOnline = Color(0xFF059669)
 val AviStatusOffline = Color(0xFFD64545)
 val AviStatusPending = Color(0xFFD97706)

@@ -40,7 +40,6 @@ class RegistrationViewModelTest {
             )
         )
 
-        // Simula recreación con el mismo estado guardado.
         val restored =
             RegistrationViewModel(handle)
 

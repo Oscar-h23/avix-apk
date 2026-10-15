@@ -699,7 +699,6 @@ class IncidentRepository internal constructor(
                         }.thenBy { it.numero }
                     )
 
-                // Mantener la validación de guardado alineada con AVIX.
                 _allowedVias.value = habilitadas.map { it.numero }.toSet()
 
                 Result.success(habilitadas)

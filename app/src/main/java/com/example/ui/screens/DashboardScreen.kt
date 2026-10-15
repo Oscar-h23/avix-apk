@@ -162,9 +162,6 @@ enum class AviNavigationTab(val title: String) {
     AJUSTES("Ajustes")
 }
 
-// =========================================================================
-// PANTALLAS PRINCIPALES (SCAFFOLD POST-LOGIN)
-// =========================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AviMainDashboardScaffold(repository: IncidentRepository) {
@@ -194,7 +191,6 @@ fun AviMainDashboardScaffold(repository: IncidentRepository) {
         mutableStateOf(registrationDraft.eventTime)
     }
 
-    // BackHandler para navegación natural en Compose
     BackHandler(enabled = currentTab != AviNavigationTab.INICIO) {
         currentTab = AviNavigationTab.INICIO
     }
@@ -218,7 +214,6 @@ fun AviMainDashboardScaffold(repository: IncidentRepository) {
                     }
                 },
                 actions = {
-                    // Badge de conexión
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = when (connectionState) {
@@ -443,9 +438,6 @@ fun AviMainDashboardScaffold(repository: IncidentRepository) {
     }
 }
 
-// =========================================================================
-// PANTALLA 2: INICIO / DASHBOARD
-// =========================================================================
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PantallaInicio(
@@ -570,7 +562,6 @@ fun PantallaInicio(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-
 
         Card(
             modifier = Modifier.fillMaxWidth(),

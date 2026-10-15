@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-// Los colores provienen de Color.kt y mantienen la identidad visual AVIX.
 private val DarkColorScheme = darkColorScheme(
     primary = AviBlueMedium,
     secondary = AviBlueAccent,
@@ -47,7 +46,6 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun MyApplicationTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Mantener la paleta AVIX por defecto; permitir colores dinámicos solo si se solicitan.
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

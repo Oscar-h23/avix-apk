@@ -130,7 +130,6 @@ class SessionManager(context: Context) : SessionStore {
 
         val user = response.usuario
 
-        // Eliminar por completo la identidad anterior antes de guardar la nueva.
         prefs?.edit()?.clear()?.apply {
             // Si el backend no informa vencimiento, no persistir el token.
             if (expiresAt != null) {

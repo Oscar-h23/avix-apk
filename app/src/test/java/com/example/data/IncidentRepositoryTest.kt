@@ -91,7 +91,6 @@ class IncidentRepositoryTest {
                 startBackground = false
             )
 
-        // Inyectar lista de vías del backend antes de crear registros locales.
         runBlocking { repository.cargarViasPermitidas() }
     }
 

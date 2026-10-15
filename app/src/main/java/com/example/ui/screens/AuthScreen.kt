@@ -160,7 +160,6 @@ fun AviRootNavHost() {
     val repository = remember { IncidentRepository.getInstance(context) }
     val sessionState by repository.sessionState.collectAsStateWithLifecycle()
 
-    // Manejo de eventos de sesión expirada
     LaunchedEffect(Unit) {
         repository.sessionExpiredEvent.collect { mensaje ->
             Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
@@ -174,9 +173,6 @@ fun AviRootNavHost() {
     }
 }
 
-// =========================================================================
-// PANTALLA 1: LOGIN (Autenticación por código de trabajador)
-// =========================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AviLoginScreen(repository: IncidentRepository) {

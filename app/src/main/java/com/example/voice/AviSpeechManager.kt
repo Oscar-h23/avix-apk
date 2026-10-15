@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Gestor unificado de voz para AVI.
+ * Gestor unificado de voz para AVIX.
  * Implementa patrón Singleton para evitar conflictos de micrófono entre
  * MainActivity y FloatingBubbleService.
  */
@@ -91,7 +91,6 @@ class AviSpeechManager private constructor(private val appContext: Context) {
     private val _voiceState = MutableStateFlow(VoiceState())
     val voiceState: StateFlow<VoiceState> = _voiceState.asStateFlow()
 
-    // Lista de callbacks para notificar tanto a MainActivity como a la Burbuja
     private val resultListeners = mutableSetOf<(String) -> Unit>()
 
     init {
@@ -458,7 +457,6 @@ class AviSpeechManager private constructor(private val appContext: Context) {
             }
 
             override fun onRmsChanged(rmsdB: Float) {
-                // RMS reportado nativamente por SpeechRecognizer (sin necesidad de bloquear con AudioRecord)
                 val safeRms = (rmsdB + 2f).coerceAtLeast(0f)
                 val currentStage = _voiceState.value.stage
                 val newStage = if (safeRms > 0.5f && (currentStage == DiagnosticStage.STAGE_1 || currentStage == DiagnosticStage.IDLE)) {

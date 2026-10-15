@@ -154,9 +154,6 @@ import com.example.util.AviDateUtils
 import com.example.voice.AviSpeechManager
 import kotlinx.coroutines.launch
 
-// =========================================================================
-// PANTALLA 3: ESCUCHA (Reconocimiento de Voz en tiempo real)
-// =========================================================================
 @Composable
 fun PantallaEscucha(
     speechManager: AviSpeechManager,

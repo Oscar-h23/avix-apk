@@ -241,11 +241,9 @@ object AviParser {
             }
         }
 
-        // Contexto de placa: palabra clave + fonética esperada.
         phrases += canonicalPhoneticWords
         phrases += canonicalPhoneticWords.map { "placa $it" }
 
-        // Los ordinales también aparecen dentro de vía y placa.
         phrases += canonicalQDigits
         phrases += canonicalQDigits.map { "placa $it" }
 
@@ -435,7 +433,6 @@ object AviParser {
         }
 
         if (actionIndex >= 0) {
-            // 2) VÍA: candidato fonéticamente parecido + número inmediatamente después.
             val plateBoundary = tokens.indexOfFirst { it in placaContextAliases }
                 .let { if (it >= 0) it else tokens.size }
 
@@ -462,7 +459,6 @@ object AviParser {
             }
         }
 
-        // 3) PLACA: solo después de haber encontrado VÍA y su bloque numérico.
         val viaIndex = tokens.indexOfFirst { it == "via" || it == "carril" || it == "pista" }
         if (viaIndex >= 0) {
             for (i in (viaIndex + 1) until tokens.size) {

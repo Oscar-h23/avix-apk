@@ -154,9 +154,6 @@ import com.example.util.AviDateUtils
 import com.example.voice.AviSpeechManager
 import kotlinx.coroutines.launch
 
-// =========================================================================
-// PANTALLA 6: CONFIGURACIÓN Y PERFIL DE OPERADOR
-// =========================================================================
 @Composable
 fun PantallaConfiguracion(repository: IncidentRepository) {
     val context = LocalContext.current
@@ -196,7 +193,6 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Datos del Trabajador
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -249,7 +245,6 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Métricas locales del motor de voz
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -318,7 +313,6 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Estado de conexión automática con AVIX-BACK
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -414,7 +408,6 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Burbuja Flotante Overlay
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -464,7 +457,6 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Botón CERRAR SESIÓN
         Button(
             onClick = {
                 repository.logout()

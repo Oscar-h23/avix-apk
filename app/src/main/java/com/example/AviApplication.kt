@@ -22,7 +22,6 @@ class AviApplication : Application(), Configuration.Provider {
         repository = IncidentRepository.getInstance(this)
 
         try {
-            // Programar sincronización periódica de registros con WorkManager
             SyncRegistroWorker.schedulePeriodicSync(this)
         } catch (e: Exception) {
             Log.w("AviApplication", "Inicialización de WorkManager diferida: ${e.message}")
