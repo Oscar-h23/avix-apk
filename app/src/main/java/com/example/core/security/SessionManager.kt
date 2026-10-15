@@ -23,6 +23,7 @@ interface SessionStore {
     val sessionState: StateFlow<SessionState>
 
     fun saveSession(response: LoginResponse)
+    fun actualizarPlaza(plazaId: Long?, plaza: String?)
     fun getToken(): String?
     fun getUsuario(): UsuarioDto? = sessionState.value.usuario
     fun isLoggedIn(): Boolean = getToken() != null
@@ -160,6 +161,25 @@ class SessionManager(context: Context) : SessionStore {
             expiresAt = expiresAt,
             requiresLogin = false
         )
+    }
+
+    /**
+     * Actualiza solo la plaza de una sesion autenticada.
+     * No regenera ni prolonga la vigencia del token y conserva otras incidencias Room.
+     */
+    @Synchronized
+    override fun actualizarPlaza(plazaId: Long?, plaza: String?) {
+        val current = _sessionState.value
+        if (!current.isLoggedIn || current.token.isNullOrBlank()) return
+        val user = current.usuario ?: return
+        val updated = user.copy(plazaId = plazaId, plaza = plaza)
+        prefs?.edit()?.apply {
+            if (plazaId == null) remove(KEY_USER_PLAZA_ID)
+            else putLong(KEY_USER_PLAZA_ID, plazaId)
+            if (plaza == null) remove(KEY_USER_PLAZA)
+            else putString(KEY_USER_PLAZA, plaza)
+        }?.commit()
+        _sessionState.value = current.copy(usuario = updated)
     }
 
     @Synchronized

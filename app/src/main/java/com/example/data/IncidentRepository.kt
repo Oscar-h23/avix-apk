@@ -185,6 +185,9 @@ class IncidentRepository internal constructor(
             verificarConexionAvix()
 
             scope.launch {
+                if (sessionManager.isLoggedIn()) {
+                    actualizarPlazaSesion()
+                }
                 cargarViasPermitidas()
             }
         }
@@ -306,17 +309,14 @@ class IncidentRepository internal constructor(
                     val body = response.body()
                     if (response.isSuccessful && body != null) {
                         val usuario = requireNotNull(body.usuario) { "AVIX API no devolvió el usuario." }
-                        val sesion = if (usuario.plazaId != null && usuario.plaza != null) {
-                            body
-                        } else {
-                            val plazasResponse = apiFactory(requestedServer, body.token).listarPlazas()
-                            check(plazasResponse.isSuccessful) {
-                                "No se pudieron consultar las plazas asignadas (" + plazasResponse.code() + ")."
-                            }
-                            val plaza = plazasResponse.body().orEmpty().firstOrNull { it.activa }
-                                ?: throw IllegalStateException("No tiene una plaza activa asignada. Consulte al supervisor.")
-                            body.copy(usuario = usuario.copy(plazaId = plaza.id, plaza = plaza.codigo))
-                        }
+                        val plaza = consultarPlazaUsuario(
+                            apiFactory(requestedServer, body.token), usuario
+                        ) ?: throw IllegalStateException(
+                            "No tiene una plaza activa asignada. Consulte al supervisor."
+                        )
+                        val sesion = body.copy(
+                            usuario = usuario.copy(plazaId = plaza.id, plaza = plaza.codigo)
+                        )
                         require(IncidentOwner.from(sesion.usuario, requestedServer) != null) {
                             "El usuario no tiene una plaza válida. Consulte al supervisor."
                         }
@@ -355,6 +355,72 @@ class IncidentRepository internal constructor(
                 }
             }
         }
+
+    /**
+     * El catalogo general incluye TODAS las plazas para supervisores, por lo
+     * que no sirve para inferir su plaza de trabajo. Primero usamos el nuevo
+     * endpoint de asignaciones activas del propio usuario.
+     */
+    private suspend fun consultarPlazaUsuario(
+        client: AvixApiService,
+        usuario: UsuarioDto
+    ): com.example.model.PlazaDto? {
+        val response = client.listarPlazasAsignadas()
+        check(response.isSuccessful) {
+            "No se pudo verificar la plaza asignada (HTTP ${response.code()})."
+        }
+        val asignadas = response.body().orEmpty().filter { it.activa }
+        if (asignadas.isNotEmpty()) {
+            return asignadas.firstOrNull { it.id == usuario.plazaId } ?: asignadas.first()
+        }
+
+        // Conservar la posibilidad de acceso global de supervisor que ya
+        // existia si todavia no tiene ninguna plaza individual asignada.
+        if (usuario.rol != "SUPERVISOR") return null
+        val todas = client.listarPlazas()
+        check(todas.isSuccessful) {
+            "No se pudo consultar las plazas activas (HTTP ${todas.code()})."
+        }
+        val activas = todas.body().orEmpty().filter { it.activa }
+        return activas.firstOrNull { it.id == usuario.plazaId } ?: activas.firstOrNull()
+    }
+
+    /**
+     * Actualiza la plaza persistida cuando cambia en AVIX Web.
+     * No modifica registros antiguos: Room mantiene su propietario y plaza
+     * original, evitando que una cola P1 sea atribuida o enviada como P2.
+     */
+    private suspend fun actualizarPlazaSesion(): Boolean {
+        val token = sessionManager.getToken() ?: return false
+        val original = sessionManager.getUsuario() ?: return false
+        val servidor = getBaseUrl()
+        return try {
+            val plaza = consultarPlazaUsuario(apiFactory(servidor, token), original)
+            val current = sessionManager.sessionState.value
+            if (current.token != token || getBaseUrl() != servidor ||
+                current.usuario?.uuid != original.uuid ||
+                current.usuario?.codigoTexto != original.codigoTexto
+            ) return false
+
+            if (plaza == null) {
+                sessionManager.actualizarPlaza(null, null)
+                _allowedVias.value = emptySet()
+                _lastSyncSummary.value = "No hay una plaza activa asignada. Consulte al supervisor."
+                false
+            } else {
+                if (original.plazaId != plaza.id || original.plaza != plaza.codigo) {
+                    sessionManager.actualizarPlaza(plaza.id, plaza.codigo)
+                    _allowedVias.value = emptySet()
+                }
+                true
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // No invalidar el usuario ni perder pendientes si no hay red.
+            false
+        }
+    }
 
     fun logout() {
         sessionManager.clearSession()
@@ -918,6 +984,16 @@ class IncidentRepository internal constructor(
     private suspend fun sync():
         Pair<SyncOutcome, Int> =
         withContext(ioDispatcher) {
+            if (sessionManager.getToken() == null) {
+                return@withContext SyncOutcome.AUTH_REQUIRED to 0
+            }
+            // No enviar pendientes de una plaza obsoleta hasta comprobar
+            // la asignacion actual. Con red caida se reintentara luego.
+            if (!actualizarPlazaSesion()) {
+                _lastSyncSummary.value =
+                    "No se pudo verificar la plaza actual. Los registros siguen guardados."
+                return@withContext SyncOutcome.RETRY to 0
+            }
             syncMutex.withLock {
                 val token =
                     sessionManager.getToken()
