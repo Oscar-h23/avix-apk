@@ -127,7 +127,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.api.SigoApiService
+import com.example.api.AvixApiService
 import com.example.data.ApiConnectionState
 import com.example.data.IncidentRepository
 import com.example.domain.HistoryFilters
@@ -256,7 +256,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
                     OutlinedTextField(
                         value = codigoInput,
                         onValueChange = { input ->
-                            if (input.all { it.isDigit() } && input.length <= 8) {
+                            if (input.matches(Regex("[A-Za-z0-9_-]{0,30}"))) {
                                 codigoInput = input
                                 errorMessage = null
                             }
@@ -270,7 +270,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -309,8 +309,8 @@ fun AviLoginScreen(repository: IncidentRepository) {
 
                     Button(
                         onClick = {
-                            val cod = codigoInput.toIntOrNull()
-                            if (cod == null || cod <= 0) {
+                            val cod = codigoInput.trim()
+                            if (!cod.matches(Regex("[A-Za-z0-9_-]{3,30}"))) {
                                 errorMessage = "Ingresa un código válido."
                                 return@Button
                             }
@@ -409,7 +409,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
             text = {
                 Column {
                     Text(
-                        "AVIX usa SIGO-BACK desplegado en Railway. Las opciones locales quedan solo para desarrollo.",
+                        "AVIX utiliza su API independiente. Configura una URL HTTPS desplegada o selecciona un servidor local para pruebas.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -424,12 +424,12 @@ fun AviLoginScreen(repository: IncidentRepository) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
-                            tempUrl = SigoApiService.PRODUCTION_BASE_URL
+                            tempUrl = AvixApiService.PRODUCTION_BASE_URL
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Usar SIGO Producción", fontSize = 11.sp)
+                        Text("Usar AVIX API configurada", fontSize = 11.sp)
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -440,7 +440,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
                     ) {
                         OutlinedButton(
                             onClick = {
-                                tempUrl = SigoApiService.LOCAL_MAC_BASE_URL
+                                tempUrl = AvixApiService.LOCAL_MAC_BASE_URL
                             },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -448,7 +448,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
                         }
                         OutlinedButton(
                             onClick = {
-                                tempUrl = SigoApiService.EMULATOR_BASE_URL
+                                tempUrl = AvixApiService.EMULATOR_BASE_URL
                             },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -461,7 +461,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
                 Button(
                     onClick = {
                         repository.updateConfig(tempUrl)
-                        repository.verificarConexionSigo()
+                        repository.verificarConexionAvix()
                         showUrlDialog = false
                     }
                 ) {

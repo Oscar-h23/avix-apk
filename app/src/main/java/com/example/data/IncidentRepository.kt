@@ -2,7 +2,7 @@ package com.example.data
 
 import android.content.Context
 import com.example.BuildConfig
-import com.example.api.SigoApiService
+import com.example.api.AvixApiService
 import com.example.core.security.SessionManager
 import com.example.core.security.SessionStore
 import com.example.data.db.AviDatabase
@@ -13,9 +13,9 @@ import com.example.model.EstadoSincronizacion
 import com.example.model.Incident
 import com.example.model.LoginRequest
 import com.example.model.LoginResponse
-import com.example.model.RegistroSigoRequest
-import com.example.model.RegistroSigoResponse
-import com.example.model.RegistroSigoUpdateRequest
+import com.example.model.RegistroAvixRequest
+import com.example.model.RegistroAvixResponse
+import com.example.model.RegistroAvixUpdateRequest
 import com.example.model.UsuarioDto
 import com.example.parser.AviParser
 import com.example.worker.SyncRegistroWorker
@@ -47,7 +47,7 @@ import java.util.UUID
 enum class ApiConnectionState(
     val label: String
 ) {
-    ONLINE("Conectado a SIGO"),
+    ONLINE("Conectado a AVIX"),
     OFFLINE("Servidor no disponible"),
     SIN_CONFIGURAR("API sin configurar")
 }
@@ -60,7 +60,7 @@ enum class SyncOutcome {
 
 /**
  * Room es la fuente de verdad local. Registrar una incidencia significa
- * persistirla primero; WorkManager se encarga de llevarla a SIGO después.
+ * persistirla primero; WorkManager se encarga de llevarla a AVIX después.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class IncidentRepository internal constructor(
@@ -70,9 +70,9 @@ class IncidentRepository internal constructor(
     val sessionManager: SessionStore =
         SessionManager(context),
     private val apiFactory:
-        (String, String?) -> SigoApiService =
+        (String, String?) -> AvixApiService =
         { url, token ->
-            SigoApiService.create(url) { token }
+            AvixApiService.create(url) { token }
         },
     private val enqueueSync: () -> Unit = {
         SyncRegistroWorker.enqueueImmediateSync(context)
@@ -182,7 +182,7 @@ class IncidentRepository internal constructor(
 
     init {
         if (startBackground) {
-            verificarConexionSigo()
+            verificarConexionAvix()
 
             scope.launch {
                 cargarViasPermitidas()
@@ -199,19 +199,18 @@ class IncidentRepository internal constructor(
 
         return if (
             stored.isNullOrBlank() ||
-            stored in setOf(
-                SigoApiService.LOCAL_MAC_BASE_URL,
-                SigoApiService.EMULATOR_BASE_URL
-            )
+            stored.contains("sigo-back-production", ignoreCase = true) ||
+            stored.trimEnd('/') in setOf("http://172.20.10.8:8080", "http://10.0.2.2:8080") ||
+            stored.contains("/api/avi/", ignoreCase = true)
         ) {
             prefs.edit()
                 .putString(
                     KEY_BASE_URL,
-                    SigoApiService.PRODUCTION_BASE_URL
+                    AvixApiService.PRODUCTION_BASE_URL
                 )
                 .apply()
 
-            SigoApiService.PRODUCTION_BASE_URL
+            AvixApiService.PRODUCTION_BASE_URL
         } else {
             normalizeServer(stored)
         }
@@ -251,7 +250,7 @@ class IncidentRepository internal constructor(
     private fun api(
         token: String? =
             sessionManager.getToken()
-    ): SigoApiService {
+    ): AvixApiService {
         return apiFactory(
             getBaseUrl(),
             token
@@ -270,11 +269,13 @@ class IncidentRepository internal constructor(
             owner.server
     }
 
+    suspend fun login(codigo: Int): Result<LoginResponse> = login(codigo.toString())
+
     suspend fun login(
-        codigo: Int
+        codigo: String
     ): Result<LoginResponse> =
         withContext(ioDispatcher) {
-            if (codigo <= 0) {
+            if (!codigo.matches(Regex("[A-Za-z0-9_-]{3,30}"))) {
                 return@withContext Result.failure(
                     IllegalArgumentException(
                         "Ingrese un código de trabajador válido."
@@ -302,35 +303,31 @@ class IncidentRepository internal constructor(
                         "El servidor cambió. Inicie sesión nuevamente."
                     }
 
-                    val body =
-                        response.body()
-
-                    if (
-                        response.isSuccessful &&
-                        body != null
-                    ) {
-                        require(
-                            IncidentOwner.from(
-                                body.usuario,
-                                requestedServer
-                            ) != null
-                        ) {
-                            "SIGO debe devolver el operador y la plaza asignada. Contacte al administrador."
-                        }
-
-                        sessionManager.saveSession(
+                    val body = response.body()
+                    if (response.isSuccessful && body != null) {
+                        val usuario = requireNotNull(body.usuario) { "AVIX API no devolvió el usuario." }
+                        val sesion = if (usuario.plazaId != null && usuario.plaza != null) {
                             body
-                        )
-
-                        _connectionState.value =
-                            ApiConnectionState.ONLINE
-
+                        } else {
+                            val plazasResponse = apiFactory(requestedServer, body.token).listarPlazas()
+                            check(plazasResponse.isSuccessful) {
+                                "No se pudieron consultar las plazas asignadas (" + plazasResponse.code() + ")."
+                            }
+                            val plaza = plazasResponse.body().orEmpty().firstOrNull { it.activa }
+                                ?: throw IllegalStateException("No tiene una plaza activa asignada. Consulte al supervisor.")
+                            body.copy(usuario = usuario.copy(plazaId = plaza.id, plaza = plaza.codigo))
+                        }
+                        require(IncidentOwner.from(sesion.usuario, requestedServer) != null) {
+                            "El usuario no tiene una plaza válida. Consulte al supervisor."
+                        }
+                        val persistida = if (sesion.expiraEn != null) {
+                            sesion.copy(expiresIn = 11 * 3600L)
+                        } else sesion
+                        sessionManager.saveSession(persistida)
+                        _connectionState.value = ApiConnectionState.ONLINE
                         cargarViasPermitidas()
-
-                        // Reanudar únicamente la cola del nuevo propietario.
                         enqueueSync()
-
-                        Result.success(body)
+                        Result.success(persistida)
                     } else {
                         Result.failure(
                             IllegalStateException(
@@ -415,7 +412,8 @@ class IncidentRepository internal constructor(
             url.host in setOf(
                 "localhost",
                 "127.0.0.1",
-                "10.0.2.2"
+                "10.0.2.2",
+                "172.18.20.32"
             )
 
         if (
@@ -448,11 +446,11 @@ class IncidentRepository internal constructor(
                 .apply()
         }
 
-        verificarConexionSigo()
+        verificarConexionAvix()
         return true
     }
 
-    fun verificarConexionSigo() {
+    fun verificarConexionAvix() {
         scope.launch {
             _connectionState.value =
                 try {
@@ -510,7 +508,7 @@ class IncidentRepository internal constructor(
         return try {
             val response =
                 api(token)
-                    .listarVias(plazaId)
+                    .listarVias(getUsuarioActual()?.plaza ?: return emptySet())
 
             val vias =
                 if (
@@ -602,14 +600,14 @@ class IncidentRepository internal constructor(
                 val response = apiFactory(
                     owner.server,
                     token
-                ).listarVias(owner.plazaId)
+                ).listarVias(getUsuarioActual()?.plaza ?: throw IllegalStateException("Plaza no disponible."))
 
                 if (response.code() == 401) {
                     expire(token)
                 }
 
                 check(response.isSuccessful) {
-                    "No se pudieron consultar las vías habilitadas de SIGO (${response.code()})."
+                    "No se pudieron consultar las vías habilitadas de AVIX (${response.code()})."
                 }
 
                 check(
@@ -620,7 +618,7 @@ class IncidentRepository internal constructor(
                 }
 
                 val habilitadas = requireNotNull(response.body()) {
-                    "SIGO no devolvió una lista de vías válida."
+                    "AVIX no devolvió una lista de vías válida."
                 }
                     .filter { via ->
                         via.activa &&
@@ -635,7 +633,7 @@ class IncidentRepository internal constructor(
                         }.thenBy { it.numero }
                     )
 
-                // Mantener la validación de guardado alineada con SIGO.
+                // Mantener la validación de guardado alineada con AVIX.
                 _allowedVias.value = habilitadas.map { it.numero }.toSet()
 
                 Result.success(habilitadas)
@@ -810,7 +808,7 @@ class IncidentRepository internal constructor(
     private suspend fun send(
         row: IncidentEntity,
         token: String,
-        client: SigoApiService
+        client: AvixApiService
     ): IncidentEntity {
         var updated =
             row.copy(
@@ -827,7 +825,7 @@ class IncidentRepository internal constructor(
         try {
             val response =
                 client.registrarEvento(
-                    RegistroSigoRequest(
+                    RegistroAvixRequest(
                         id = row.id,
                         placa = row.placa,
                         via = row.via,
@@ -835,7 +833,9 @@ class IncidentRepository internal constructor(
                         fechaHoraEvento =
                             row.fechaHoraEvento,
                         textoReconocido =
-                            row.textoReconocido
+                            row.textoReconocido.take(1000),
+                        plaza = row.plazaId,
+                        origen = if (row.textoReconocido.isBlank()) "MANUAL" else "VOZ"
                     )
                 )
 
@@ -876,7 +876,7 @@ class IncidentRepository internal constructor(
                                     .PENDIENTE
                                     .name,
                             ultimoError =
-                                "SIGO no está disponible. Reintentaremos automáticamente."
+                                "AVIX no está disponible. Reintentaremos automáticamente."
                         )
 
                     else ->
@@ -886,7 +886,7 @@ class IncidentRepository internal constructor(
                                     .REQUIERE_REVISION
                                     .name,
                             ultimoError =
-                                "SIGO rechazó el registro (${response.code()}). Revise los datos o contacte al administrador."
+                                "AVIX rechazó el registro (${response.code()}). Revise los datos o contacte al administrador."
                         )
                 }
 
@@ -1021,10 +1021,10 @@ class IncidentRepository internal constructor(
                                     "Inicie sesión para reanudar los envíos."
 
                                 SyncOutcome.RETRY ->
-                                    "$confirmed confirmados en SIGO. Quedan registros pendientes."
+                                    "$confirmed confirmados en AVIX. Quedan registros pendientes."
 
                                 SyncOutcome.COMPLETE ->
-                                    "$confirmed confirmados en SIGO. Los rechazados requieren revisión."
+                                    "$confirmed confirmados en AVIX. Los rechazados requieren revisión."
                             }
 
                         outcome to confirmed
@@ -1150,7 +1150,11 @@ class IncidentRepository internal constructor(
                             row.intentosSincronizacion ==
                             0
                     ) {
-                        "Sincronice este registro antes de editar: SIGO puede haber recibido el intento anterior."
+                        "Sincronice este registro antes de editar: AVIX puede haber recibido el intento anterior."
+                    }
+
+                    require(row.estadoSincronizacion != EstadoSincronizacion.SINCRONIZADO.name) {
+                        "Los registros confirmados solo pueden editarse desde AVIX Web."
                     }
 
                     var edited =
@@ -1173,7 +1177,7 @@ class IncidentRepository internal constructor(
                                 token
                             ).actualizarEvento(
                                 id,
-                                RegistroSigoUpdateRequest(
+                                RegistroAvixUpdateRequest(
                                     placa = plate,
                                     via = requireNotNull(
                                         via
@@ -1196,7 +1200,7 @@ class IncidentRepository internal constructor(
                         check(
                             response.isSuccessful
                         ) {
-                            "No se pudo confirmar la edición en SIGO (${response.code()})."
+                            "No se pudo confirmar la edición en AVIX (${response.code()})."
                         }
                     } else {
                         edited =
@@ -1232,13 +1236,34 @@ class IncidentRepository internal constructor(
             }
         }
 
+    private fun normalizarFechaRango(value: String?, end: Boolean): String {
+        val lima = java.util.TimeZone.getTimeZone("America/Lima")
+        val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US)
+        format.timeZone = lima
+        val now = System.currentTimeMillis()
+        if (value.isNullOrBlank()) {
+            val millis = if (end) now else now - 7L * 86_400_000
+            return format.format(java.util.Date(millis))
+        }
+        if (value.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
+            val cal = java.util.Calendar.getInstance(lima)
+            cal.time = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                timeZone = lima
+                isLenient = false
+            }.parse(value) ?: throw IllegalArgumentException("Fecha inválida")
+            if (end) cal.add(java.util.Calendar.DATE, 1)
+            return format.format(cal.time)
+        }
+        return value
+    }
+
     suspend fun consultarHistorialServidor(
         desde: String? = null,
         hasta: String? = null,
         plazaId: String? = null,
         via: Int? = null,
         accion: String? = null
-    ): Result<List<RegistroSigoResponse>> =
+    ): Result<List<RegistroAvixResponse>> =
         withContext(ioDispatcher) {
             try {
                 val token =
@@ -1252,8 +1277,8 @@ class IncidentRepository internal constructor(
                 val response =
                     api(token)
                         .consultarRegistros(
-                            desde,
-                            hasta,
+                            normalizarFechaRango(desde, false),
+                            normalizarFechaRango(hasta, true),
                             plazaId,
                             via,
                             accion
@@ -1269,7 +1294,7 @@ class IncidentRepository internal constructor(
                 check(
                     response.isSuccessful
                 ) {
-                    "No se pudo consultar SIGO (${response.code()})."
+                    "No se pudo consultar AVIX (${response.code()})."
                 }
 
                 Result.success(

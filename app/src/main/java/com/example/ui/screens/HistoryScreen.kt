@@ -126,7 +126,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.api.SigoApiService
+import com.example.api.AvixApiService
 import com.example.data.ApiConnectionState
 import com.example.data.IncidentRepository
 import com.example.domain.HistoryFilters
@@ -156,7 +156,7 @@ import com.example.voice.AviSpeechManager
 import kotlinx.coroutines.launch
 
 // =========================================================================
-// PANTALLA 5: HISTORIAL DE EVENTOS (Room Database + SIGO)
+// PANTALLA 5: HISTORIAL DE EVENTOS (Room Database + AVIX)
 // =========================================================================
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -291,7 +291,7 @@ fun PantallaHistorial(
 
                         Toast.makeText(
                             context,
-                            "$cant registro(s) confirmados en SIGO",
+                            "$cant registro(s) confirmados en AVIX",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -702,7 +702,7 @@ fun EditarIncidenciaDialog(
         mutableStateOf(0)
     }
 
-    // Refrescar desde SIGO cada vez que se abre la edición; nunca usar
+    // Refrescar desde AVIX cada vez que se abre la edición; nunca usar
     // la caché local como autorización para modificar una vía.
     LaunchedEffect(item.id, recargarVias) {
         cargandoVias = true
@@ -730,7 +730,7 @@ fun EditarIncidenciaDialog(
                         item.estadoSincronizacion ==
                         EstadoSincronizacion.SINCRONIZADO
                     ) {
-                        "La corrección también se actualizará en SIGO."
+                        "La corrección también se actualizará en AVIX."
                     } else {
                         "Se guardará localmente y quedará pendiente de sincronización."
                     },
@@ -792,7 +792,7 @@ fun EditarIncidenciaDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Vía habilitada en SIGO",
+                    text = "Vía habilitada en AVIX",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -920,7 +920,7 @@ fun EditarIncidenciaDialog(
                     }
 
                     if (via == null || viasDisponibles.none { it.numero == via }) {
-                        errorMessage = "Seleccione una vía habilitada por SIGO."
+                        errorMessage = "Seleccione una vía habilitada por AVIX."
                         return@Button
                     }
 

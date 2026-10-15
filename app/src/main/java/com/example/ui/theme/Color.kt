@@ -2,7 +2,7 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Paleta AVIX alineada al diseño visual de SIGO Web.
+// Paleta AVIX alineada al diseño visual de AVIX Web.
 val AviPrimaryDark = Color(0xFF0B2342)
 val AviNavy = Color(0xFF0B2342)
 val AviBlueMedium = Color(0xFF0B5CAB)

@@ -9,7 +9,7 @@
 
     <!-- Excepciones explícitas para pruebas locales de desarrollo (Mac y Emulador) -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">172.20.10.8</domain>
+        <domain includeSubdomains="true">172.18.20.32</domain>
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">localhost</domain>
