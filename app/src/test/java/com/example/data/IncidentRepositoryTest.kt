@@ -96,6 +96,45 @@ class IncidentRepositoryTest {
     }
 
     @Test
+    fun `login toma P2 asignada aunque el catalogo general tenga P1`() = runBlocking {
+        api.plazasAsignadas = listOf(com.example.model.PlazaDto(id = 2, codigo = "P2"))
+        val result = repository.login("2396")
+        assertTrue(result.isSuccess)
+        assertEquals("P2", result.getOrThrow().usuario?.plaza)
+        assertEquals(2L, repository.currentOwner()?.plazaId)
+    }
+
+    @Test
+    fun `asignacion cambiada a P2 no envia pendientes antiguos de P3`() = runBlocking {
+        val local = repository.registrarIncidencia(
+            placa = "ABC123", via = 101, accion = "FUGA",
+            fechaHoraEvento = "2026-10-12T18:00:00-05:00",
+            textoReconocido = "prueba", operationId = "registro-p3"
+        )
+        assertTrue(local.isSuccess)
+        api.plazasAsignadas = listOf(com.example.model.PlazaDto(id = 2, codigo = "P2"))
+        val outcome = repository.sincronizarPendientesDesdeWorker()
+        assertEquals(SyncOutcome.COMPLETE, outcome)
+        assertEquals("P2", session.getUsuario()?.plaza)
+        assertEquals(emptyList<String>(), api.receivedIds)
+        assertEquals(1, dao.size())
+    }
+
+    @Test
+    fun `sin conexion para validar plaza no envia pendientes antiguos`() = runBlocking {
+        val saved = repository.registrarIncidencia(
+            placa = "ABC123", via = 101, accion = "FUGA",
+            fechaHoraEvento = "2026-10-12T18:00:00-05:00",
+            textoReconocido = "prueba", operationId = "registro-sin-red"
+        )
+        assertTrue(saved.isSuccess)
+        api.asignacionCode = 503
+        assertEquals(SyncOutcome.RETRY, repository.sincronizarPendientesDesdeWorker())
+        assertEquals(emptyList<String>(), api.receivedIds)
+        assertEquals(1, dao.size())
+    }
+
+    @Test
     fun `empty server via list cannot authorize any road`() = runBlocking {
         api.vias = emptyList()
         repository.cargarViasPermitidas()
@@ -655,6 +694,13 @@ private class FakeSessionStore(
             )
     }
 
+    override fun actualizarPlaza(plazaId: Long?, plaza: String?) {
+        val current = state.value
+        state.value = current.copy(
+            usuario = current.usuario?.copy(plazaId = plazaId, plaza = plaza)
+        )
+    }
+
     override fun getToken():
         String? =
         state.value.token
@@ -721,8 +767,16 @@ private class StubAvixApiService :
             AvixStatusResponse()
         )
 
+    var plazasAsignadas = listOf(com.example.model.PlazaDto(id = 3, codigo = "P3"))
+    var asignacionCode = 200
+
     override suspend fun listarPlazas(): Response<List<com.example.model.PlazaDto>> =
         Response.success(listOf(com.example.model.PlazaDto(id = 3, codigo = "P3")))
+
+    override suspend fun listarPlazasAsignadas(): Response<List<com.example.model.PlazaDto>> {
+        return if (asignacionCode in 200..299) Response.success(plazasAsignadas)
+        else Response.error(asignacionCode, "{}".toResponseBody(null))
+    }
 
     override suspend fun listarVias(
         plaza: String

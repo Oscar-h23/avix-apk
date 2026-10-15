@@ -30,6 +30,22 @@ class AvixApiContractTest {
         } finally { server.shutdown() }
     }
 
+    @Test fun assignmentsAreReadFromAuthenticatedUserNotGeneralCatalog() = runBlocking {
+        val server = MockWebServer()
+        server.start()
+        try {
+            server.enqueue(MockResponse().setHeader("Content-Type", "application/json")
+                .setBody("""[{"id":2,"codigo":"P2","activa":true}]"""))
+            val service = AvixApiService.create(server.url("/").toString()) { "test-token" }
+            val assigned = service.listarPlazasAsignadas()
+            assertTrue(assigned.isSuccessful)
+            assertEquals("P2", assigned.body()?.single()?.codigo)
+            val request = server.takeRequest()
+            assertEquals("/api/v1/catalogos/plazas/asignadas", request.path)
+            assertEquals("Bearer test-token", request.getHeader("Authorization"))
+        } finally { server.shutdown() }
+    }
+
     @Test fun catalogsUseAuthenticatedAvixRoutes() = runBlocking {
         val server = MockWebServer()
         server.start()

@@ -22,6 +22,9 @@ interface AvixApiService {
     @GET("api/v1/catalogos/plazas")
     suspend fun listarPlazas(): Response<List<PlazaDto>>
 
+    @GET("api/v1/catalogos/plazas/asignadas")
+    suspend fun listarPlazasAsignadas(): Response<List<PlazaDto>>
+
     @GET("api/v1/catalogos/vias")
     suspend fun listarVias(@Query("plaza") plaza: String): Response<List<ViaDto>>
 
