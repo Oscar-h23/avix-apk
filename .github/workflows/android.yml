@@ -22,5 +22,7 @@ jobs:
           yes | sdkmanager --licenses > /dev/null || true
           sdkmanager "platforms;android-36.1" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
       - name: Kotlin tests and debug APK
-        run: bash ./gradlew --no-daemon testDebugUnitTest assembleDebug
+        run: gradle --no-daemon testDebugUnitTest assembleDebug
