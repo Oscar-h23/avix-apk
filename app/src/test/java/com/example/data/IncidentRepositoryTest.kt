@@ -707,7 +707,7 @@ private class StubSigoApiService :
                 expiresIn = 3600,
                 usuario = UsuarioDto(
                     id = 1,
-                    codigo = request.codigo,
+                    codigo = request.codigo.toIntOrNull(),
                     plazaId = 3,
                     plaza = "P3"
                 )
@@ -721,15 +721,18 @@ private class StubSigoApiService :
             SigoStatusResponse()
         )
 
+    override suspend fun listarPlazas(): Response<List<com.example.model.PlazaDto>> =
+        Response.success(listOf(com.example.model.PlazaDto(id = 3, codigo = "P3")))
+
     override suspend fun listarVias(
-        plazaId: Long
+        plaza: String
     ): Response<List<ViaDto>> {
         if (viaCode !in 200..299) {
             return Response.error(viaCode, "{}".toResponseBody(null))
         }
         return Response.success(
             viaResults ?: vias.map { numero ->
-                ViaDto(plazaId = plazaId, numero = numero)
+                ViaDto(plazaId = 3, numero = numero)
             }
         )
     }
@@ -769,9 +772,9 @@ private class StubSigoApiService :
         Response.success(Unit)
 
     override suspend fun consultarRegistros(
-        desde: String?,
-        hasta: String?,
-        plazaId: String?,
+        desde: String,
+        hasta: String,
+        plaza: String?,
         via: Int?,
         accion: String?
     ): Response<List<RegistroSigoResponse>> =

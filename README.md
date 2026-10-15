@@ -1,6 +1,24 @@
 # AVIX — registro de incidencias por voz
 
-Aplicación Android para registrar eventos **FUGA / DERIVADO**, vía y placa. Incluye reconocimiento de voz, burbuja flotante, almacenamiento local Room y sincronización con SIGO.
+Aplicación Android para registrar eventos **FUGA / DERIVADO**, vía y placa. Incluye reconocimiento de voz, burbuja flotante, almacenamiento local Room y sincronización con AVIX.
+
+## Conexión con AVIX API
+
+Esta aplicación consume el backend independiente [osx-23/avix-api](https://github.com/osx-23/avix-api). El repositorio Git **no** es una dirección HTTP: hay que ejecutar la API en el puerto 8080 o proporcionar su dominio HTTPS una vez desplegada.
+
+En el emulador Android se utiliza `http://10.0.2.2:8080/` cuando no se configura una URL. Para un APK físico o producción, configura la dirección del backend:
+
+```bash
+AVIX_API_URL=https://tu-api-avix.up.railway.app/ ./gradlew testDebugUnitTest assembleDebug
+```
+
+También puedes definir `AVIX_API_URL` en `gradle.properties` **local** (no versionar URLs internas) o usar «Configurar servidor» en el login. La URL debe apuntar al servidor, **sin** agregar `api/v1`. No se incluye una clave secreta de Supabase en la aplicación.
+
+La autenticación móvil sigue siendo **solo código**. Después del login se consulta `/api/v1/catalogos/plazas` y se selecciona la primera plaza activa asignada. Si el operador tiene varias plazas deberá configurarse la selección explícita en una próxima versión antes de usar más de una.
+
+Los registros se crean con `POST /api/v1/registros`, `idempotenciaId` estable, `plaza`, `via`, `accion`, `placa`, `ocurridoEn` y `origen`; se mantiene Room y WorkManager.
+
+La edición de registros ya confirmados está reservada a AVIX Web, porque la API rechaza PATCH con tokens móviles. No se enviarán solicitudes PUT al servidor anterior.
 
 ## Compilar y verificar
 
@@ -25,12 +43,12 @@ GitHub Actions ejecuta pruebas, lint y compilación del APK debug.
 AVIX trabaja con enfoque **offline-first**:
 
 - Confirmar un registro significa que quedó guardado en Room.
-- La UI no espera a que SIGO responda.
+- La UI no espera a que AVIX responda.
 - Cada borrador conserva un UUID. Repetir la misma operación usa el mismo identificador.
 - Los estados visibles son:
   - **Guardado en dispositivo**
   - **Enviando**
-  - **Confirmado por SIGO**
+  - **Confirmado por AVIX**
   - **Requiere revisión**
 - WorkManager procesa la cola en segundo plano.
 - Errores temporales (red, 408, 429, 5xx) se reintentan.
@@ -132,4 +150,4 @@ Además de CI, probar en un teléfono Android real:
 6. doble pulsación al guardar;
 7. cierre/reinicio de la app;
 8. migración desde una instalación anterior;
-9. comportamiento de SIGO ante reenvío del mismo UUID.
+9. comportamiento de AVIX ante reenvío del mismo UUID.

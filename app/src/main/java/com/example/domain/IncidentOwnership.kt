@@ -6,7 +6,7 @@ import com.example.model.UsuarioDto
  * Identidad propietaria de una incidencia local.
  *
  * El operador y la plaza siempre provienen de la sesión autenticada devuelta
- * por SIGO. El servidor forma parte de la identidad para impedir que una cola
+ * por AVIX. El servidor forma parte de la identidad para impedir que una cola
  * creada contra un entorno termine enviándose a otro.
  */
 data class IncidentOwner(
@@ -23,9 +23,15 @@ data class IncidentOwner(
                 ?.takeIf { it > 0L }
                 ?: return null
 
-            val operator = user.id
-                ?.takeIf { it > 0L }
-                ?.let { "id:$it" }
+            val operator = user.uuid
+                ?.takeIf { it.isNotBlank() }
+                ?.let { "uuid:$it" }
+                ?: user.id
+                    ?.takeIf { it > 0L }
+                    ?.let { "id:$it" }
+                ?: user.codigoTexto
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { "codigo:$it" }
                 ?: user.codigo
                     ?.takeIf { it > 0 }
                     ?.let { "codigo:$it" }

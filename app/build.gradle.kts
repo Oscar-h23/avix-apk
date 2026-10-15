@@ -19,6 +19,9 @@ android {
     versionCode = 1
     versionName = "1.0"
 
+    val apiUrl = providers.gradleProperty("AVIX_API_URL").orNull ?: System.getenv("AVIX_API_URL") ?: ""
+    buildConfigField("String", "AVIX_API_BASE_URL", "\"$apiUrl\"")
+
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 

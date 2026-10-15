@@ -1,137 +1,71 @@
 package com.example.api
 
-import com.example.model.LoginRequest
-import com.example.model.LoginResponse
-import com.example.model.RegistroSigoRequest
-import com.example.model.RegistroSigoResponse
-import com.example.model.RegistroSigoUpdateRequest
-import com.example.model.SigoStatusResponse
-import com.example.model.ViaDto
+import com.example.BuildConfig
+import com.example.model.*
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.Headers
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Path
-import retrofit2.http.Query
+import retrofit2.http.*
 import java.util.concurrent.TimeUnit
 
 interface SigoApiService {
+    @POST("api/v1/auth/movil")
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
-    /**
-     * Autenticación de trabajador mediante código.
-     * POST /api/avi/auth/login
-     */
-    @Headers("Content-Type: application/json")
-    @POST("api/avi/auth/login")
-    suspend fun login(
-        @Body request: LoginRequest
-    ): Response<LoginResponse>
-
-    /**
-     * Verificación de conectividad y estado del backend SIGO.
-     * GET /api/avi/status
-     */
-    @GET("api/avi/status")
+    @GET("api/v1/status")
     suspend fun getStatus(): Response<SigoStatusResponse>
 
-    /**
-     * Vías activas y visibles para AVIX en una plaza.
-     * GET /api/avi/vias?plazaId={id}
-     */
-    @GET("api/avi/vias")
-    suspend fun listarVias(
-        @Query("plazaId") plazaId: Long
-    ): Response<List<ViaDto>>
+    @GET("api/v1/catalogos/plazas")
+    suspend fun listarPlazas(): Response<List<PlazaDto>>
 
-    /**
-     * Envío y confirmación de evento vehicular.
-     * POST /api/avi/registros
-     */
-    @Headers("Content-Type: application/json")
-    @POST("api/avi/registros")
-    suspend fun registrarEvento(
-        @Body request: RegistroSigoRequest
-    ): Response<RegistroSigoResponse>
+    @GET("api/v1/catalogos/vias")
+    suspend fun listarVias(@Query("plaza") plaza: String): Response<List<ViaDto>>
 
-    /**
-     * Edición de un registro ya sincronizado.
-     * PUT /api/avi/registros/{id}
-     */
-    @Headers("Content-Type: application/json")
-    @PUT("api/avi/registros/{id}")
-    suspend fun actualizarEvento(
-        @Path("id") id: String,
-        @Body request: RegistroSigoUpdateRequest
-    ): Response<Unit>
+    @POST("api/v1/registros")
+    suspend fun registrarEvento(@Body request: RegistroSigoRequest): Response<RegistroSigoResponse>
 
-    /**
-     * Consulta de historial de eventos en el servidor SIGO.
-     * GET /api/avi/registros
-     */
-    @GET("api/avi/registros")
+    @PATCH("api/v1/registros/{id}")
+    suspend fun actualizarEvento(@Path("id") id: String, @Body request: RegistroSigoUpdateRequest): Response<Unit>
+
+    @GET("api/v1/registros/consulta")
     suspend fun consultarRegistros(
-        @Query("desde") desde: String? = null,
-        @Query("hasta") hasta: String? = null,
-        @Query("plazaId") plazaId: String? = null,
+        @Query("desde") desde: String,
+        @Query("hasta") hasta: String,
+        @Query("plaza") plaza: String? = null,
         @Query("via") via: Int? = null,
         @Query("accion") accion: String? = null
     ): Response<List<RegistroSigoResponse>>
 
     companion object {
-        const val PRODUCTION_BASE_URL = "https://sigo-back-production-70c2.up.railway.app/"
-        const val DEFAULT_BASE_URL = PRODUCTION_BASE_URL
+        val PRODUCTION_BASE_URL: String = BuildConfig.AVIX_API_BASE_URL
+            .ifBlank { if (BuildConfig.DEBUG) "http://10.0.2.2:8080/" else "https://avix-api.invalid/" }
+            .trimEnd('/') + "/"
+        val DEFAULT_BASE_URL: String = PRODUCTION_BASE_URL
         const val LOCAL_MAC_BASE_URL = "http://172.20.10.8:8080/"
         const val EMULATOR_BASE_URL = "http://10.0.2.2:8080/"
 
-        val defaultMoshi: Moshi = Moshi.Builder()
-            .addLast(KotlinJsonAdapterFactory())
-            .build()
+        val defaultMoshi: Moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
 
-        fun create(
-            baseUrl: String,
-            tokenProvider: () -> String? = { null }
-        ): SigoApiService {
-            val safeUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
-
-            val authInterceptor = Interceptor { chain ->
-                val originalRequest = chain.request()
-                val token = tokenProvider()
-                val newRequestBuilder = originalRequest.newBuilder()
-                    .addHeader("Accept", "application/json")
-
-                if (!token.isNullOrBlank()) {
-                    newRequestBuilder.addHeader("Authorization", "Bearer $token")
-                }
-                chain.proceed(newRequestBuilder.build())
+        fun create(baseUrl: String, tokenProvider: () -> String? = { null }): SigoApiService {
+            val authentication = Interceptor { chain ->
+                val builder = chain.request().newBuilder().header("Accept", "application/json")
+                tokenProvider()?.takeIf { it.isNotBlank() }?.let { builder.header("Authorization", "Bearer $it") }
+                chain.proceed(builder.build())
             }
-
-            val loggingInterceptor = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BASIC
-            }
-
-            val okHttpClient = OkHttpClient.Builder()
+            val client = OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(20, TimeUnit.SECONDS)
                 .writeTimeout(20, TimeUnit.SECONDS)
-                .addInterceptor(authInterceptor)
-                .addInterceptor(loggingInterceptor)
+                .addInterceptor(authentication)
                 .build()
-
-            return Retrofit.Builder()
-                .baseUrl(safeUrl)
-                .client(okHttpClient)
+            return Retrofit.Builder().baseUrl(baseUrl.trimEnd('/') + "/")
+                .client(client)
                 .addConverterFactory(MoshiConverterFactory.create(defaultMoshi))
-                .build()
-                .create(SigoApiService::class.java)
+                .build().create(SigoApiService::class.java)
         }
     }
 }
