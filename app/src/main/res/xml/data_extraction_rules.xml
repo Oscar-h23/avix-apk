@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="avi_keystore_secure_session.xml" />
+        <exclude domain="sharedpref" path="avi_fallback_session.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="avi_keystore_secure_session.xml" />
+        <exclude domain="sharedpref" path="avi_fallback_session.xml" />
+    </device-transfer>
+</data-extraction-rules>

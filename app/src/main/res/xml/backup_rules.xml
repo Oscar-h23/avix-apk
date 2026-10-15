@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- El token cifrado no debe restaurarse sin su clave de Android Keystore. -->
+    <exclude domain="sharedpref" path="avi_keystore_secure_session.xml" />
+    <exclude domain="sharedpref" path="avi_fallback_session.xml" />
+</full-backup-content>
