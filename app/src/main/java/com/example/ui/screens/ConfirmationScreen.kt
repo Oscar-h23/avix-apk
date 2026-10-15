@@ -127,7 +127,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.api.AvixApiService
+import com.example.api.SigoApiService
 import com.example.data.ApiConnectionState
 import com.example.data.IncidentRepository
 import com.example.domain.HistoryFilters
@@ -413,7 +413,7 @@ fun PantallaConfirmacion(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // VÍA: catálogo real de AVIX filtrado por la plaza del usuario.
+                // VÍA: catálogo real de SIGO filtrado por la plaza del usuario.
                 Text(
                     text = "Vía",
                     fontSize = 12.sp,
@@ -599,7 +599,7 @@ fun PantallaConfirmacion(
                     if (resultado.isSuccess) {
                         Toast.makeText(
                             context,
-                            "Guardado en dispositivo. AVIX lo enviará a AVIX en segundo plano.",
+                            "Guardado en dispositivo. AVIX lo enviará a SIGO en segundo plano.",
                             Toast.LENGTH_LONG
                         ).show()
                         onConfirmado()

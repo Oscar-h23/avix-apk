@@ -102,9 +102,7 @@ class SessionManager(context: Context) : SessionStore {
                             .getLong(KEY_USER_PLAZA_ID, 0L)
                             .takeIf { it > 0L },
                         plaza = securePrefs
-                            .getString(KEY_USER_PLAZA, null),
-                        uuid = securePrefs.getString(KEY_USER_UUID, null),
-                        codigoTexto = securePrefs.getString(KEY_USER_CODE_TEXT, null)
+                            .getString(KEY_USER_PLAZA, null)
                     ),
                     expiresAt = expiresAt,
                     requiresLogin = false
@@ -118,7 +116,7 @@ class SessionManager(context: Context) : SessionStore {
     @Synchronized
     override fun saveSession(response: LoginResponse) {
         require(response.token.isNotBlank()) {
-            "AVIX API no devolvió una sesión válida."
+            "SIGO no devolvió una sesión válida."
         }
 
         val expiresAt = response.expiresIn
@@ -139,8 +137,6 @@ class SessionManager(context: Context) : SessionStore {
                 user?.id?.let {
                     putLong(KEY_USER_ID, it)
                 }
-                putString(KEY_USER_UUID, user?.uuid)
-                putString(KEY_USER_CODE_TEXT, user?.codigoTexto)
                 user?.codigo?.let {
                     putInt(KEY_USER_CODIGO, it)
                 }
@@ -198,15 +194,13 @@ class SessionManager(context: Context) : SessionStore {
     companion object {
         private const val TAG = "SessionManager"
         private const val PREFS_FILE_SECURE =
-            "avix_keystore_secure_session_v2"
+            "avi_keystore_secure_session"
         private const val PREFS_FILE_FALLBACK =
             "avi_fallback_session"
 
         private const val KEY_TOKEN = "jwt_token"
         private const val KEY_EXPIRES_AT = "expires_at"
         private const val KEY_USER_ID = "usuario_id"
-        private const val KEY_USER_UUID = "usuario_uuid"
-        private const val KEY_USER_CODE_TEXT = "usuario_codigo_texto"
         private const val KEY_USER_CODIGO = "usuario_codigo"
         private const val KEY_USER_NOMBRE = "usuario_nombre"
         private const val KEY_USER_ROL = "usuario_rol"

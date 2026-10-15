@@ -426,7 +426,7 @@ fun FloatingOverlayContent(
         )
     }
 
-    // La voz puede llegar antes que la respuesta de AVIX. Cuando se
+    // La voz puede llegar antes que la respuesta de SIGO. Cuando se
     // actualiza el catálogo, resolver "51" -> "151" sin borrar la placa.
     LaunchedEffect(allowedVias) {
         if (allowedVias.isNotEmpty()) {
@@ -865,7 +865,7 @@ fun FloatingOverlayContent(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = if (loadingVias) "CARGANDO VÍAS..." else "RECARGAR VÍAS DE AVIX",
+                            text = if (loadingVias) "CARGANDO VÍAS..." else "RECARGAR VÍAS DE SIGO",
                             fontSize = 11.sp
                         )
                     }

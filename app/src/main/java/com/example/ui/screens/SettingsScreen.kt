@@ -127,7 +127,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.api.AvixApiService
+import com.example.api.SigoApiService
 import com.example.data.ApiConnectionState
 import com.example.data.IncidentRepository
 import com.example.domain.HistoryFilters
@@ -206,7 +206,7 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
                 Text(text = "Sesión Activa", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(text = "Trabajador: ${usuario?.nombre ?: "Operador"}", fontSize = 13.sp)
-                Text(text = "Código de Operador: #${usuario?.codigoTexto ?: usuario?.codigo?.toString() ?: "---"}", fontSize = 13.sp)
+                Text(text = "Código de Operador: #${usuario?.codigo ?: "---"}", fontSize = 13.sp)
                 Text(
                     text = "Plaza Asignada: ${usuario?.plaza ?: usuario?.plazaId?.toString() ?: "Sin plaza"}",
                     fontSize = 13.sp
@@ -308,7 +308,7 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
                 if (allowedVias.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Vías AVIX cargadas: ${allowedVias.sorted().joinToString(", ")}",
+                        text = "Vías SIGO cargadas: ${allowedVias.sorted().joinToString(", ")}",
                         fontSize = 11.sp,
                         color = AviStatusOnline
                     )
@@ -318,7 +318,7 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Estado de conexión automática con AVIX-BACK
+        // Estado de conexión automática con SIGO-BACK
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -326,7 +326,7 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Conexión a AVIX",
+                    text = "Conexión a SIGO",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -387,7 +387,7 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
                 OutlinedButton(
                     onClick = {
                         isCheckingConnection = true
-                        repository.verificarConexionAvix()
+                        repository.verificarConexionSigo()
                         isCheckingConnection = false
                     },
                     enabled = !isCheckingConnection,

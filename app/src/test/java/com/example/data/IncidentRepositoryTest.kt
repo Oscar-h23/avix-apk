@@ -3,7 +3,7 @@ package com.example.data
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
-import com.example.api.AvixApiService
+import com.example.api.SigoApiService
 import com.example.core.security.SessionState
 import com.example.core.security.SessionStore
 import com.example.data.db.IncidentDao
@@ -11,10 +11,10 @@ import com.example.data.db.IncidentEntity
 import com.example.model.LoginRequest
 import com.example.model.LoginResponse
 import com.example.model.ParsedCommand
-import com.example.model.RegistroAvixRequest
-import com.example.model.RegistroAvixResponse
-import com.example.model.RegistroAvixUpdateRequest
-import com.example.model.AvixStatusResponse
+import com.example.model.RegistroSigoRequest
+import com.example.model.RegistroSigoResponse
+import com.example.model.RegistroSigoUpdateRequest
+import com.example.model.SigoStatusResponse
 import com.example.model.UsuarioDto
 import com.example.model.ViaDto
 import com.example.ui.registration.RegistrationViewModel
@@ -53,7 +53,7 @@ class IncidentRepositoryTest {
     private lateinit var context: Context
     private lateinit var dao: FakeIncidentDao
     private lateinit var session: FakeSessionStore
-    private lateinit var api: StubAvixApiService
+    private lateinit var api: StubSigoApiService
     private lateinit var repository: IncidentRepository
     private lateinit var enqueueCount: AtomicInteger
 
@@ -76,7 +76,7 @@ class IncidentRepositoryTest {
                 plaza = 3L
             )
         )
-        api = StubAvixApiService()
+        api = StubSigoApiService()
         enqueueCount = AtomicInteger(0)
 
         repository =
@@ -685,8 +685,8 @@ private class FakeSessionStore(
     }
 }
 
-private class StubAvixApiService :
-    AvixApiService {
+private class StubSigoApiService :
+    SigoApiService {
 
     var postCode = 201
     var viaCode = 200
@@ -707,7 +707,7 @@ private class StubAvixApiService :
                 expiresIn = 3600,
                 usuario = UsuarioDto(
                     id = 1,
-                    codigo = request.codigo.toIntOrNull(),
+                    codigo = request.codigo,
                     plazaId = 3,
                     plaza = "P3"
                 )
@@ -716,30 +716,27 @@ private class StubAvixApiService :
     }
 
     override suspend fun getStatus():
-        Response<AvixStatusResponse> =
+        Response<SigoStatusResponse> =
         Response.success(
-            AvixStatusResponse()
+            SigoStatusResponse()
         )
 
-    override suspend fun listarPlazas(): Response<List<com.example.model.PlazaDto>> =
-        Response.success(listOf(com.example.model.PlazaDto(id = 3, codigo = "P3")))
-
     override suspend fun listarVias(
-        plaza: String
+        plazaId: Long
     ): Response<List<ViaDto>> {
         if (viaCode !in 200..299) {
             return Response.error(viaCode, "{}".toResponseBody(null))
         }
         return Response.success(
             viaResults ?: vias.map { numero ->
-                ViaDto(plazaId = 3, numero = numero)
+                ViaDto(plazaId = plazaId, numero = numero)
             }
         )
     }
 
     override suspend fun registrarEvento(
-        request: RegistroAvixRequest
-    ): Response<RegistroAvixResponse> {
+        request: RegistroSigoRequest
+    ): Response<RegistroSigoResponse> {
         postCalls.incrementAndGet()
         receivedIds += request.id
 
@@ -748,7 +745,7 @@ private class StubAvixApiService :
         ) {
             Response.success(
                 postCode,
-                RegistroAvixResponse(
+                RegistroSigoResponse(
                     id = request.id,
                     fechaHoraRecepcion =
                         "2026-10-09T01:00:01-05:00"
@@ -767,16 +764,16 @@ private class StubAvixApiService :
 
     override suspend fun actualizarEvento(
         id: String,
-        request: RegistroAvixUpdateRequest
+        request: RegistroSigoUpdateRequest
     ): Response<Unit> =
         Response.success(Unit)
 
     override suspend fun consultarRegistros(
-        desde: String,
-        hasta: String,
-        plaza: String?,
+        desde: String?,
+        hasta: String?,
+        plazaId: String?,
         via: Int?,
         accion: String?
-    ): Response<List<RegistroAvixResponse>> =
+    ): Response<List<RegistroSigoResponse>> =
         Response.success(emptyList())
 }

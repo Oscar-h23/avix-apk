@@ -8,7 +8,7 @@ import java.util.UUID
 enum class EstadoSincronizacion(val label: String) {
     PENDIENTE("Guardado en dispositivo"),
     SINCRONIZANDO("Enviando"),
-    SINCRONIZADO("Confirmado por AVIX"),
+    SINCRONIZADO("Confirmado por SIGO"),
     REQUIERE_REVISION("Requiere revisión")
 }
 
@@ -40,21 +40,19 @@ data class ParsedCommand(
     val advertencias: List<String> = emptyList()
 )
 
-// DTOs para la integración con AVIX Spring Boot API
+// DTOs para la integración con SIGO Spring Boot API
 @JsonClass(generateAdapter = true)
-data class RegistroAvixRequest(
-    @Json(name = "idempotenciaId") val id: String,
+data class RegistroSigoRequest(
+    val id: String,
     val placa: String,
     val via: Int?,
     val accion: String,
-    @Json(name = "ocurridoEn") val fechaHoraEvento: String,
-    @Json(name = "observaciones") val textoReconocido: String,
-    val plaza: String = "P1",
-    val origen: String = "VOZ"
+    val fechaHoraEvento: String,
+    val textoReconocido: String
 )
 
 @JsonClass(generateAdapter = true)
-data class RegistroAvixUpdateRequest(
+data class RegistroSigoUpdateRequest(
     val placa: String,
     val via: Int,
     val accion: String,
@@ -63,27 +61,24 @@ data class RegistroAvixUpdateRequest(
 )
 
 @JsonClass(generateAdapter = true)
-data class RegistroAvixResponse(
+data class RegistroSigoResponse(
     val id: String,
     val placa: String? = null,
     val via: Int? = null,
     val accion: String? = null,
     val plazaId: String? = null,
     val fechaHoraEvento: String? = null,
-    @Json(name = "creado_en") val fechaHoraRecepcion: String? = null,
+    val fechaHoraRecepcion: String? = null,
     val estadoSincronizacion: String = "SINCRONIZADO",
     val mensaje: String? = null
 )
 
 @JsonClass(generateAdapter = true)
-data class AvixStatusResponse(
+data class SigoStatusResponse(
     val status: String = "UP",
-    val modulo: String = "AVIX AVI",
-    val baseDatos: String = "avix",
-    val timestamp: String? = null,
-    val api: String? = null,
-    val version: String? = null,
-    val supabaseConfigurado: Boolean? = null
+    val modulo: String = "SIGO AVI",
+    val baseDatos: String = "sigo test",
+    val timestamp: String? = null
 )
 
 enum class DiagnosticStage(val step: Int, val label: String) {

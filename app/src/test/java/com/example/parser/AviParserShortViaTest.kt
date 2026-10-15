@@ -116,7 +116,7 @@ class AviParserShortViaTest {
         // Antes de cargar la plaza el dictado ya contiene un número.
         assertEquals(51, AviParser.normalizeViaNumber("51", emptySet()))
 
-        // Al cargar AVIX se convierte sin modificar acción ni placa.
+        // Al cargar SIGO se convierte sin modificar acción ni placa.
         assertEquals(151, AviParser.normalizeViaNumber("51", vias))
         assertEquals(105, AviParser.normalizeViaNumber("105", vias))
         assertEquals(101, AviParser.normalizeViaNumber("101", vias))
