@@ -127,7 +127,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.api.SigoApiService
+import com.example.api.AvixApiService
 import com.example.data.ApiConnectionState
 import com.example.data.IncidentRepository
 import com.example.domain.HistoryFilters
@@ -386,7 +386,7 @@ fun PantallaEscucha(
                 OutlinedButton(
                     onClick = {
                         // El paquete de reconocimiento sin conexión es del
-                        // teléfono, no de SIGO. Abrir su configuración.
+                        // teléfono, no de AVIX. Abrir su configuración.
                         try {
                             context.startActivity(
                                 Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)

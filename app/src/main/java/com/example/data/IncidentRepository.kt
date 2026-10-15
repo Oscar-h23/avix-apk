@@ -2,7 +2,7 @@ package com.example.data
 
 import android.content.Context
 import com.example.BuildConfig
-import com.example.api.SigoApiService
+import com.example.api.AvixApiService
 import com.example.core.security.SessionManager
 import com.example.core.security.SessionStore
 import com.example.data.db.AviDatabase
@@ -13,9 +13,9 @@ import com.example.model.EstadoSincronizacion
 import com.example.model.Incident
 import com.example.model.LoginRequest
 import com.example.model.LoginResponse
-import com.example.model.RegistroSigoRequest
-import com.example.model.RegistroSigoResponse
-import com.example.model.RegistroSigoUpdateRequest
+import com.example.model.RegistroAvixRequest
+import com.example.model.RegistroAvixResponse
+import com.example.model.RegistroAvixUpdateRequest
 import com.example.model.UsuarioDto
 import com.example.parser.AviParser
 import com.example.worker.SyncRegistroWorker
@@ -70,9 +70,9 @@ class IncidentRepository internal constructor(
     val sessionManager: SessionStore =
         SessionManager(context),
     private val apiFactory:
-        (String, String?) -> SigoApiService =
+        (String, String?) -> AvixApiService =
         { url, token ->
-            SigoApiService.create(url) { token }
+            AvixApiService.create(url) { token }
         },
     private val enqueueSync: () -> Unit = {
         SyncRegistroWorker.enqueueImmediateSync(context)
@@ -182,7 +182,7 @@ class IncidentRepository internal constructor(
 
     init {
         if (startBackground) {
-            verificarConexionSigo()
+            verificarConexionAvix()
 
             scope.launch {
                 cargarViasPermitidas()
@@ -200,16 +200,17 @@ class IncidentRepository internal constructor(
         return if (
             stored.isNullOrBlank() ||
             stored.contains("sigo-back-production", ignoreCase = true) ||
+            stored.trimEnd('/') in setOf("http://172.20.10.8:8080", "http://10.0.2.2:8080") ||
             stored.contains("/api/avi/", ignoreCase = true)
         ) {
             prefs.edit()
                 .putString(
                     KEY_BASE_URL,
-                    SigoApiService.PRODUCTION_BASE_URL
+                    AvixApiService.PRODUCTION_BASE_URL
                 )
                 .apply()
 
-            SigoApiService.PRODUCTION_BASE_URL
+            AvixApiService.PRODUCTION_BASE_URL
         } else {
             normalizeServer(stored)
         }
@@ -249,7 +250,7 @@ class IncidentRepository internal constructor(
     private fun api(
         token: String? =
             sessionManager.getToken()
-    ): SigoApiService {
+    ): AvixApiService {
         return apiFactory(
             getBaseUrl(),
             token
@@ -412,7 +413,7 @@ class IncidentRepository internal constructor(
                 "localhost",
                 "127.0.0.1",
                 "10.0.2.2",
-                "172.20.10.8"
+                "172.18.20.32"
             )
 
         if (
@@ -445,11 +446,11 @@ class IncidentRepository internal constructor(
                 .apply()
         }
 
-        verificarConexionSigo()
+        verificarConexionAvix()
         return true
     }
 
-    fun verificarConexionSigo() {
+    fun verificarConexionAvix() {
         scope.launch {
             _connectionState.value =
                 try {
@@ -807,7 +808,7 @@ class IncidentRepository internal constructor(
     private suspend fun send(
         row: IncidentEntity,
         token: String,
-        client: SigoApiService
+        client: AvixApiService
     ): IncidentEntity {
         var updated =
             row.copy(
@@ -824,7 +825,7 @@ class IncidentRepository internal constructor(
         try {
             val response =
                 client.registrarEvento(
-                    RegistroSigoRequest(
+                    RegistroAvixRequest(
                         id = row.id,
                         placa = row.placa,
                         via = row.via,
@@ -1176,7 +1177,7 @@ class IncidentRepository internal constructor(
                                 token
                             ).actualizarEvento(
                                 id,
-                                RegistroSigoUpdateRequest(
+                                RegistroAvixUpdateRequest(
                                     placa = plate,
                                     via = requireNotNull(
                                         via
@@ -1262,7 +1263,7 @@ class IncidentRepository internal constructor(
         plazaId: String? = null,
         via: Int? = null,
         accion: String? = null
-    ): Result<List<RegistroSigoResponse>> =
+    ): Result<List<RegistroAvixResponse>> =
         withContext(ioDispatcher) {
             try {
                 val token =

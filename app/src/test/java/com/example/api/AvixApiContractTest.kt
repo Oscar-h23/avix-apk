@@ -1,7 +1,7 @@
 package com.example.api
 
 import com.example.model.LoginRequest
-import com.example.model.RegistroSigoRequest
+import com.example.model.RegistroAvixRequest
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -9,13 +9,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AvixApiContractTest {
+    @Test fun defaultLocalApiUsesCurrentMacAddress() {
+        assertEquals("http://172.18.20.32:8080/", AvixApiService.LOCAL_MAC_BASE_URL)
+    }
+
     @Test fun mobileLoginUsesNewRouteAndStringCode() = runBlocking {
         val server = MockWebServer()
         server.start()
         try {
             server.enqueue(MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json")
                 .setBody("""{"token":"test-token","tipo":"Bearer","expiraEn":"2026-10-16T05:00:00Z","usuario":{"id":"64f579a3-2937-440a-a315-bc9c2a9baf31","codigo":"AG001","nombres":"Agente","rol":"AGENTE"}}"""))
-            val response = SigoApiService.create(server.url("/").toString()).login(LoginRequest("AG001"))
+            val response = AvixApiService.create(server.url("/").toString()).login(LoginRequest("AG001"))
             assertTrue(response.isSuccessful)
             assertEquals("AG001", response.body()?.usuario?.codigoTexto)
             assertEquals("64f579a3-2937-440a-a315-bc9c2a9baf31", response.body()?.usuario?.uuid)
@@ -34,7 +38,7 @@ class AvixApiContractTest {
                 .setBody("""[{"id":3,"codigo":"P3","activa":true}]"""))
             server.enqueue(MockResponse().setHeader("Content-Type", "application/json")
                 .setBody("""[{"id":22,"plaza_id":3,"numero":151,"activa":true}]"""))
-            val service = SigoApiService.create(server.url("/").toString()) { "test-token" }
+            val service = AvixApiService.create(server.url("/").toString()) { "test-token" }
             assertEquals("P3", service.listarPlazas().body()?.first()?.codigo)
             assertEquals(151, service.listarVias("P3").body()?.first()?.numero)
             val first = server.takeRequest()
@@ -51,8 +55,8 @@ class AvixApiContractTest {
         try {
             server.enqueue(MockResponse().setResponseCode(201).setHeader("Content-Type", "application/json")
                 .setBody("""{"id":"b2274473-6357-45ec-a48c-73a61056776d","placa":"X1Z505","creado_en":"2026-10-15T06:00:00Z"}"""))
-            val service = SigoApiService.create(server.url("/").toString()) { "test-token" }
-            val response = service.registrarEvento(RegistroSigoRequest(
+            val service = AvixApiService.create(server.url("/").toString()) { "test-token" }
+            val response = service.registrarEvento(RegistroAvixRequest(
                 id = "b2274473-6357-45ec-a48c-73a61056776d", placa = "X1Z505",
                 via = 151, accion = "FUGA", fechaHoraEvento = "2026-10-14T22:10:00-05:00",
                 textoReconocido = "fuga via 151", plaza = "P3", origen = "VOZ"))

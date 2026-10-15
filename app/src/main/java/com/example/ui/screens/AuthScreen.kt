@@ -127,7 +127,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.api.SigoApiService
+import com.example.api.AvixApiService
 import com.example.data.ApiConnectionState
 import com.example.data.IncidentRepository
 import com.example.domain.HistoryFilters
@@ -424,7 +424,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
-                            tempUrl = SigoApiService.PRODUCTION_BASE_URL
+                            tempUrl = AvixApiService.PRODUCTION_BASE_URL
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp)
@@ -440,7 +440,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
                     ) {
                         OutlinedButton(
                             onClick = {
-                                tempUrl = SigoApiService.LOCAL_MAC_BASE_URL
+                                tempUrl = AvixApiService.LOCAL_MAC_BASE_URL
                             },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -448,7 +448,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
                         }
                         OutlinedButton(
                             onClick = {
-                                tempUrl = SigoApiService.EMULATOR_BASE_URL
+                                tempUrl = AvixApiService.EMULATOR_BASE_URL
                             },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -461,7 +461,7 @@ fun AviLoginScreen(repository: IncidentRepository) {
                 Button(
                     onClick = {
                         repository.updateConfig(tempUrl)
-                        repository.verificarConexionSigo()
+                        repository.verificarConexionAvix()
                         showUrlDialog = false
                     }
                 ) {

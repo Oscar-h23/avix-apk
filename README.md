@@ -6,13 +6,15 @@ Aplicación Android para registrar eventos **FUGA / DERIVADO**, vía y placa. In
 
 Esta aplicación consume el backend independiente [osx-23/avix-api](https://github.com/osx-23/avix-api). El repositorio Git **no** es una dirección HTTP: hay que ejecutar la API en el puerto 8080 o proporcionar su dominio HTTPS una vez desplegada.
 
-En el emulador Android se utiliza `http://10.0.2.2:8080/` cuando no se configura una URL. Para un APK físico o producción, configura la dirección del backend:
+Para pruebas en la red local, la app Android utiliza por defecto `http://172.18.20.32:8080/` cuando no se configura una URL. En el emulador puede seleccionarse `http://10.0.2.2:8080/` desde Configurar servidor. Para distribuir un APK release, configura el dominio HTTPS real del backend:
 
 ```bash
-AVIX_API_URL=https://tu-api-avix.up.railway.app/ ./gradlew testDebugUnitTest assembleDebug
+AVIX_API_URL=https://tu-api-avix.up.railway.app/ gradle testDebugUnitTest assembleDebug
 ```
 
 También puedes definir `AVIX_API_URL` en `gradle.properties` **local** (no versionar URLs internas) o usar «Configurar servidor» en el login. La URL debe apuntar al servidor, **sin** agregar `api/v1`. No se incluye una clave secreta de Supabase en la aplicación.
+
+El servidor local `172.18.20.32:8080` requiere que el dispositivo y la computadora estén en una red accesible y que Spring Boot escuche en una interfaz alcanzable. Se permite HTTP para esa dirección de pruebas; para producción utiliza HTTPS.
 
 La autenticación móvil sigue siendo **solo código**. Después del login se consulta `/api/v1/catalogos/plazas` y se selecciona la primera plaza activa asignada. Si el operador tiene varias plazas deberá configurarse la selección explícita en una próxima versión antes de usar más de una.
 
@@ -31,7 +33,7 @@ Requisitos principales:
 Configure `local.properties` con `sdk.dir=/ruta/al/Android/sdk` o use `ANDROID_HOME`.
 
 ```bash
-./gradlew testDebugUnitTest lintDebug assembleDebug
+gradle testDebugUnitTest lintDebug assembleDebug
 ```
 
 El Wrapper fija Gradle 9.3.1 y verifica el SHA-256 de la distribución. La compilación debug usa la firma estándar de Android; no necesita un keystore privado.

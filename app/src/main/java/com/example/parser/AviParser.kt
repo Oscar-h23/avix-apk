@@ -690,7 +690,7 @@ object AviParser {
      * a que una sola frase gane completa.
      *
      * - Acción: voto ponderado FUGA / DERIVADO / LIBERADO.
-     * - Vía: voto ponderado y filtrado por el catálogo real de SIGO.
+     * - Vía: voto ponderado y filtrado por el catálogo real de AVIX.
      * - Placa: voto independiente por cada una de las seis posiciones.
      *
      * Si la fusión no produce algo al menos tan coherente como la mejor

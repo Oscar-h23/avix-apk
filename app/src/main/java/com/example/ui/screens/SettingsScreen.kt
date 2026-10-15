@@ -127,7 +127,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.api.SigoApiService
+import com.example.api.AvixApiService
 import com.example.data.ApiConnectionState
 import com.example.data.IncidentRepository
 import com.example.domain.HistoryFilters
@@ -387,7 +387,7 @@ fun PantallaConfiguracion(repository: IncidentRepository) {
                 OutlinedButton(
                     onClick = {
                         isCheckingConnection = true
-                        repository.verificarConexionSigo()
+                        repository.verificarConexionAvix()
                         isCheckingConnection = false
                     },
                     enabled = !isCheckingConnection,

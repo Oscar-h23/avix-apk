@@ -40,9 +40,9 @@ data class ParsedCommand(
     val advertencias: List<String> = emptyList()
 )
 
-// DTOs para la integración con SIGO Spring Boot API
+// DTOs para la integración con AVIX Spring Boot API
 @JsonClass(generateAdapter = true)
-data class RegistroSigoRequest(
+data class RegistroAvixRequest(
     @Json(name = "idempotenciaId") val id: String,
     val placa: String,
     val via: Int?,
@@ -54,7 +54,7 @@ data class RegistroSigoRequest(
 )
 
 @JsonClass(generateAdapter = true)
-data class RegistroSigoUpdateRequest(
+data class RegistroAvixUpdateRequest(
     val placa: String,
     val via: Int,
     val accion: String,
@@ -63,7 +63,7 @@ data class RegistroSigoUpdateRequest(
 )
 
 @JsonClass(generateAdapter = true)
-data class RegistroSigoResponse(
+data class RegistroAvixResponse(
     val id: String,
     val placa: String? = null,
     val via: Int? = null,
@@ -76,10 +76,10 @@ data class RegistroSigoResponse(
 )
 
 @JsonClass(generateAdapter = true)
-data class SigoStatusResponse(
+data class AvixStatusResponse(
     val status: String = "UP",
-    val modulo: String = "SIGO AVI",
-    val baseDatos: String = "sigo test",
+    val modulo: String = "AVIX AVI",
+    val baseDatos: String = "avix",
     val timestamp: String? = null,
     val api: String? = null,
     val version: String? = null,
